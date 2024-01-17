@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Face Detection</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      // Requires Experimental Web Platform features
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // Set up hidden video element 640x480 px
+        const video = document.createElement("video");
+        video.width = 640;
+        video.height = 480;
+
+        // Constants for rendering
+        eyeRadius = 100;
+        pupilRadius = 30;
+        leftEyeCenter = 0;
+        rightEyeCenter = 0;
+
+        video.style.display = "none";
+        document.body.appendChild(video);
+
+        navigator.mediaDevices
+          .getUserMedia({ video: true, audio: false, facingMode: "user" })
+          .then((stream) => {
+            video.srcObject = stream;
+            video.play();
+
+            const canvas = document.createElement("canvas");
+            document.body.appendChild(canvas);
+            const context = canvas.getContext("2d");
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            leftEyeCenter = canvas.width / 3;
+            rightEyeCenter = (canvas.width * 2) / 3;
+
+            // Returns the center if the face in fraction of the canvas
+            getCenterOfFace = (face) => {
+              const { top, left, width, height } = face.boundingBox;
+              const xCenter = 1 - (left + width / 2) / 640; // Invert x-axis
+              const yCenter = (top + height / 2) / 480 - 0.1; // Shift y-axis up
+              console.log("Face bounding box:", xCenter, yCenter);
+              return {
+                x: xCenter,
+                y: yCenter,
+              };
+            };
+
+            setInterval(() => {
+              const faceDetector = new FaceDetector();
+              faceDetector
+                .detect(video)
+                .then((faces) => {
+                  if (faces.length === 0) {
+                    console.log("No faces detected");
+                    return;
+                  }
+
+                  const { x, y } = getCenterOfFace(faces[0]);
+                  const { top, left, width, height } = faces[0].boundingBox;
+
+                  // The distance to the person is approximately (face width) * -0.3 + 120 cm
+                  const headDistance = width * -0.3 + 120;
+                  console.log("Distance to face:", headDistance);
+                  
+                  // The width of the face is approximately 15 cm in real life
+                  const headWidth = 15; // cm
+                  
+                  // cm per px at face distance = face width in cm / face width in px
+                  const cmPerPx = headWidth / width;
+
+                  // The position of the head in relation to the center of the eyes in the canvas
+                  const headXPosition = (left + width / 2 - 320) * cmPerPx;
+
+                  // Calculate the angle from the center of the face to the center of the eyes
+                  const angle = Math.atan2(headXPosition, headDistance);
+
+                  const leftEyeCenter = canvas.width / 2 - 150;
+                  const rightEyeCenter = canvas.width / 2 + 150;
+
+                  leftEyeXAngle = angle;
+
+                  rightEyeXAngle = angle;
+
+                  console.log("head x position:", headXPosition);
+
+                  // console.log(
+                  //   "head angle in degrees:",
+                  //   angle * (180 / Math.PI)
+                  // );
+
+                  context.clearRect(0, 0, canvas.width, canvas.height);
+                  context.fillStyle = "black";
+                  context.lineWidth = 5;
+
+                  // Stroke two fixed black circles as eye frames
+                  context.beginPath();
+                  context.arc(
+                    leftEyeCenter,
+                    canvas.height / 2,
+                    eyeRadius,
+                    0,
+                    2 * Math.PI
+                  );
+                  context.stroke();
+                  context.closePath();
+
+                  context.beginPath();
+                  context.arc(
+                    rightEyeCenter,
+                    canvas.height / 2,
+                    eyeRadius,
+                    0,
+                    2 * Math.PI
+                  );
+                  context.stroke();
+                  context.closePath();
+
+                  // Draw two circles as pupils inside the eye frames
+                  //Math.sin(angle) * eyeRadius;
+
+                  context.beginPath();
+                  context.arc(
+                    leftEyeCenter - Math.sin(leftEyeXAngle) * eyeRadius,
+                    canvas.height / 2 + (y * eyeRadius) / 2 - eyeRadius / 4,
+                    pupilRadius,
+                    0,
+                    2 * Math.PI
+                  );
+                  context.fill();
+                  context.closePath();
+
+                  context.beginPath();
+
+                  context.arc(
+                    rightEyeCenter - Math.sin(rightEyeXAngle) * eyeRadius,
+                    canvas.height / 2 + (y * eyeRadius) / 2 - eyeRadius / 4,
+                    pupilRadius,
+                    0,
+                    2 * Math.PI
+                  );
+                  context.fill();
+                  context.closePath();
+                })
+                .catch((error) =>
+                  console.error("Face detection error:", error.message)
+                );
+            }, 1000);
+          })
+          .catch((error) => console.error("Unable to access webcam:", error));
+      });
+    </script>
+  </body>
+</html>
