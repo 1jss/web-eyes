@@ -73,15 +73,16 @@
                   // The distance to the person is approximately (face width) * -0.3 + 120 cm
                   const headDistance = width * -0.3 + 120;
                   console.log("Distance to face:", headDistance);
-                  
-                  // The width of the face is approximately 15 cm in real life
+
+                  // The width of a face is approximately 15 cm in real life
                   const headWidth = 15; // cm
-                  
+
                   // cm per px at face distance = face width in cm / face width in px
                   const cmPerPx = headWidth / width;
 
                   // The position of the head in relation to the center of the eyes in the canvas
                   const headXPosition = (left + width / 2 - 320) * cmPerPx;
+                  const headYPosition = (top + height / 2 - 240) * cmPerPx;
 
                   // Calculate the angle from the center of the face to the center of the eyes
                   const angle = Math.atan2(headXPosition, headDistance);
@@ -89,11 +90,17 @@
                   const leftEyeCenter = canvas.width / 2 - 150;
                   const rightEyeCenter = canvas.width / 2 + 150;
 
-                  leftEyeXAngle = angle;
-
-                  rightEyeXAngle = angle;
-
-                  console.log("head x position:", headXPosition);
+                  const leftEyeXAngle = Math.atan2(
+                    headXPosition - 3, // Subtract 3 cm to account for the distance between the eyes
+                    headDistance
+                  );
+                  const rightEyeXAngle = Math.atan2(
+                    headXPosition + 3, // Subtract 3 cm to account for the distance between the eyes
+                    headDistance
+                  );
+                  const eyeYAngle = Math.atan2(headYPosition, headDistance);
+                  const pupilYposition =
+                    canvas.height / 2 + Math.sin(eyeYAngle) * eyeRadius / Math.PI;
 
                   // console.log(
                   //   "head angle in degrees:",
@@ -127,13 +134,52 @@
                   context.stroke();
                   context.closePath();
 
-                  // Draw two circles as pupils inside the eye frames
-                  //Math.sin(angle) * eyeRadius;
+                  context.lineWidth = 10;
+
+                  // Eye brows
+                  context.beginPath();
+                  context.arc(
+                    leftEyeCenter,
+                    canvas.height / 2 - eyeRadius,
+                    eyeRadius - 20,
+                    Math.PI + 0.7,
+                    2 * Math.PI - 0.7
+                  );
+                  context.stroke();
+                  context.closePath();
 
                   context.beginPath();
                   context.arc(
-                    leftEyeCenter - Math.sin(leftEyeXAngle) * eyeRadius,
-                    canvas.height / 2 + (y * eyeRadius) / 2 - eyeRadius / 4,
+                    rightEyeCenter,
+                    canvas.height / 2 - eyeRadius,
+                    eyeRadius - 20,
+                    Math.PI + 0.7,
+                    2 * Math.PI - 0.7
+                  );
+                  context.stroke();
+                  context.closePath();
+
+                  // Mouth
+                  context.beginPath();
+                  context.arc(
+                    canvas.width / 2,
+                    canvas.height / 2 + 100,
+                    eyeRadius -20,
+                    0 + 0.7,
+                    Math.PI - 0.7
+                  );
+                  context.stroke();
+                  context.closePath();
+
+                  // Draw two circles as pupils inside the eye frames
+                  //Math.sin(angle) * eyeRadius;
+
+                  context.lineWidth = 5;
+
+                  context.beginPath();
+                  context.arc(
+                    leftEyeCenter - Math.sin(leftEyeXAngle) * eyeRadius/Math.PI,
+                    pupilYposition,
                     pupilRadius,
                     0,
                     2 * Math.PI
@@ -142,11 +188,35 @@
                   context.closePath();
 
                   context.beginPath();
-
                   context.arc(
-                    rightEyeCenter - Math.sin(rightEyeXAngle) * eyeRadius,
-                    canvas.height / 2 + (y * eyeRadius) / 2 - eyeRadius / 4,
+                    rightEyeCenter - Math.sin(rightEyeXAngle) * eyeRadius/Math.PI,
+                    pupilYposition,
                     pupilRadius,
+                    0,
+                    2 * Math.PI
+                  );
+                  context.fill();
+                  context.closePath();
+
+
+                  // whites inside the pupils
+                  context.fillStyle = "white";
+                  context.beginPath();
+                  context.arc(
+                    leftEyeCenter - Math.sin(leftEyeXAngle) * eyeRadius/Math.PI + 10,
+                    pupilYposition -10,
+                    10,
+                    0,
+                    2 * Math.PI
+                  );
+                  context.fill();
+                  context.closePath();
+
+                  context.beginPath();
+                  context.arc(
+                    rightEyeCenter - Math.sin(rightEyeXAngle) * eyeRadius/Math.PI + 10,
+                    pupilYposition -10,
+                    10,
                     0,
                     2 * Math.PI
                   );
@@ -156,7 +226,7 @@
                 .catch((error) =>
                   console.error("Face detection error:", error.message)
                 );
-            }, 1000);
+            }, 500);
           })
           .catch((error) => console.error("Unable to access webcam:", error));
       });
