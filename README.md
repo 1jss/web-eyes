@@ -1,9 +1,4 @@
 # Web eyes
-Web eyes is a simple canvas with eyes that follow the face of the person in front of the computer using the webcam.
-
-Note that this requires Experimental Web Platform features to be enabled in chrome
-https://developer.chrome.com/blog/browser-flags/
-
 
 ## Description
 Web eyes is a simple one file project featuring a canvas with animated eyes that track the movements of a person's face detected through the computer's webcam.
